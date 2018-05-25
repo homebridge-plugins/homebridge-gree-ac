@@ -1,9 +1,15 @@
 Control Gree Air Conditioning from Homebridge.
 
+This plugins is based on Gree HVAC MQTT bridge (https://github.com/arthurkrupa/gree-hvac-mqtt-bridge).
+
+## Requirements 
+- NodeJS (>=8.9.3) with NPM
+- An MQTT broker and Gree smart HVAC device on the same network
+
 Autodiscover of the GREE AC wifi module is done automatically but you need to configure the broadcast ip address of your home network.
 Needs mqtt server to get the ambient themperature. You can use an ESP8266 with DHTXX sensor and post temperature value to a topic in an mqtt server.
 
-Usage Example:
+## Usage Example:
 
     "bridge": {
         "name": "Homebridge",
