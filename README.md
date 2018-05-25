@@ -1,4 +1,4 @@
-Control Gree Air Conditioning from Homebridge.
+##Control Gree Air Conditioning from Homebridge.
 
 This plugins is based on Gree HVAC MQTT bridge (https://github.com/arthurkrupa/gree-hvac-mqtt-bridge).
 
