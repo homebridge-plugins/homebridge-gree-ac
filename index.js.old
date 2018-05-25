@@ -1,0 +1,214 @@
+'use strict';
+const commands = require('./app/commandEnums');
+var Accessory, Service, Characteristic;
+
+module.exports = function(homebridge) {
+    Accessory = homebridge.platformAccessory;
+    Service = homebridge.hap.Service;
+    Characteristic = homebridge.hap.Characteristic;
+
+    homebridge.registerAccessory('homebridge-gree-ac', 'GreeAC', GreeAC);
+}
+
+function GreeAC(log, config) {
+    this.log = log;
+    this.name = config.name || 'Gree AC';
+    this.host = config.host;
+
+    this.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.OFF;
+    this.TargetTemperature = 22;
+
+    this.services = [];
+
+    // Ac Partner is not available in Homekit yet, register as Fan
+    this.acPartnerService = new Service.Thermostat(this.name);
+
+    this.acPartnerService
+        .getCharacteristic(Characteristic.TargetHeatingCoolingState)
+            .on('set', this.setTargetHeatingCoolingState.bind(this))
+            .on('get', this.getTargetHeatingCoolingState.bind(this));
+
+    this.acPartnerService
+        .getCharacteristic(Characteristic.TargetTemperature)
+            .setProps({
+                maxValue: 30,
+                minValue: 17,
+                minStep: 1
+            })
+            .on('set', this.setTargetTemperature.bind(this))
+            .on('get', this.getTargetTemperature.bind(this));
+
+    this.acPartnerService
+        .getCharacteristic(Characteristic.CurrentTemperature)
+            .setProps({
+                maxValue: 30,
+                minValue: 17,
+                minStep: 1
+            })
+            .on('get', this.getCurrentTemperature.bind(this));
+
+    // this.acPartnerService
+    //     .getCharacteristic(Characteristic.SwingMode)
+    //         .setProps({
+    //                     minValue: 0,
+    //                     maxValue: 11,
+    //                     minStep: 1
+    //                 })
+    //         .on('get', this.getSwing.bind(this))
+    //         .on('set', this.setSwing.bind(this));
+
+    // this.acPartnerService
+    //     .getCharacteristic(Characteristic.RotationSpeed)
+    //             .setProps({
+    //                 minValue: 0,
+    //                 maxValue: 5,
+    //                 minStep: 1
+    //             })
+    //             .on('get', this.getRotationSpeed.bind(this))
+    //             .on('set', this.setRotationSpeed.bind(this));
+
+    this.services.push(this.acPartnerService);
+
+    this.serviceInfo = new Service.AccessoryInformation();
+
+    this.serviceInfo
+        .setCharacteristic(Characteristic.Manufacturer, 'Gree')
+        .setCharacteristic(Characteristic.Model, 'Bora A5');
+    
+    this.services.push(this.serviceInfo);
+
+    this.discover();
+}
+
+GreeAC.prototype = {
+
+    discover: function(){
+        var accessory = this;
+        var log = this.log;
+        var host = this.host;
+        const deviceOptions = {
+          host: host,
+          onStatus: (deviceModel) => {
+            var device_power_status = deviceModel.props[commands.power.code];
+            var device_mode_status = deviceModel.props[commands.mode.code];
+            var device_temperature = deviceModel.props[commands.temperature.code];
+
+            if (device_power_status === commands.power.value.off) {
+                  accessory.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.OFF;
+            } else if (device_mode_status === commands.mode.value.auto) {
+                  accessory.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.AUTO;
+            } else if  (device_mode_status === commands.mode.value.cool) {
+                  accessory.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.COOL;
+            } else if  (device_mode_status === commands.mode.value.heat) {
+                  accessory.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
+            } else {
+                  accessory.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.AUTO;
+            }
+            this.acPartnerService
+                .setCharacteristic(Characteristic.TargetHeatingCoolingState, accessory.TargetHeatingCoolingState);
+            this.acPartnerService
+                .getCharacteristic(Characteristic.CurrentTemperature)
+                .updateValue(parseFloat(device_temperature));
+
+            console.log('Gree mode %s', device_mode_status.toString());
+            console.log('Gree temperature %s', device_temperature.toString());
+            console.log('Gree fanspeed %s', deviceModel.props[commands.fanSpeed.code].toString());
+            console.log('Gree swingvert %s', deviceModel.props[commands.swingVert.code].toString());
+            console.log('Gree powerstatus %s', device_power_status.toString());
+          },
+          onUpdate: (deviceModel) => {
+            // console.log('[UDP] Status updated on %s', deviceModel.name)
+          },
+          onConnected: (deviceModel) => {
+            console.log('[GreeAC] Connected on %s with ip address %s[%d]: %s', deviceModel.name, deviceModel.address, deviceModel.port, deviceModel.bound ? true: false);
+          }
+        };
+
+        accessory.hvac = require('./app/deviceFactory').connect(deviceOptions);
+    },
+
+    getTargetHeatingCoolingState: function(callback) {
+        var state = 3;
+    var accessory = this;
+        if (this.hvac.device.props[commands.power.code] === commands.power.value.off) {
+                  state = 0;
+        } else if (this.hvac.device.props[commands.mode.code] === commands.mode.value.auto) {
+                  state = 3;
+        } else if  (this.hvac.device.props[commands.mode.code] === commands.mode.value.cool) {
+                  state = 2;
+        } else if  (this.hvac.device.props[commands.mode.code] === commands.mode.value.heat) {
+                  state = 1;
+        } else {
+            state = 3;
+        }
+    accessory.TargetHeatingCoolingState = state;
+        callback(null, this.TargetHeatingCoolingState);
+    },
+
+    setTargetHeatingCoolingState: function(TargetHeatingCoolingState, callback, context) {
+        if(context !== 'fromSetValue') {
+            this.TargetHeatingCoolingState = TargetHeatingCoolingState;
+            if (this.TargetHeatingCoolingState === Characteristic.TargetHeatingCoolingState.OFF) {
+                this.hvac.setPower(commands.power.value.off);
+                this.log.debug('Set Gree AC power off');
+            } else {
+
+                if (this.hvac.device.props[commands.power.code] === commands.power.value.off) {
+                  this.hvac.setPower(commands.power.value.on);
+                  this.log.debug('Set Gree AC power on');
+                }
+
+                if (this.TargetHeatingCoolingState === Characteristic.TargetHeatingCoolingState.HEAT) {
+                    this.log.debug('Set Gree AC to HEAT')
+                    this.hvac.setMode(commands.mode.value['heat'])
+                }
+
+                if (this.TargetHeatingCoolingState === Characteristic.TargetHeatingCoolingState.COOL) {
+                    this.log.debug('Set Gree AC to COOL')
+                    this.hvac.setMode(commands.mode.value['cool'])
+                }
+
+                if (this.TargetHeatingCoolingState === Characteristic.TargetHeatingCoolingState.AUTO) {
+                    this.log.debug('Set Gree AC to AUTO')
+                    this.hvac.setMode(commands.mode.value['auto'])
+                }
+            }
+        }
+        callback();
+    },
+
+    getTargetTemperature: function(callback) {
+        callback(null, parseInt(this.hvac.device.props[commands.temperature.code]));
+    },
+
+    setTargetTemperature: function(TargetTemperature, callback, context) {
+        if(context !== 'fromSetValue') {
+            this.TargetTemperature = TargetTemperature;
+            if (this.TargetHeatingCoolingState == Characteristic.TargetHeatingCoolingState.OFF) {
+              this.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.AUTO;
+            }
+
+            // Update current temperature
+            this.acPartnerService
+                .getCharacteristic(Characteristic.CurrentTemperature)
+                .updateValue(parseFloat(TargetTemperature));
+
+            this.log.debug('Set temperature: ' + TargetTemperature);
+            this.hvac.setTemp(parseInt(TargetTemperature));
+        }
+        callback();
+    },
+
+    getCurrentTemperature: function(callback) {
+        this.log("CurrentTemperature %s", this.TargetTemperature);
+        callback(null, parseFloat(this.TargetTemperature));
+    },
+
+    identify: function(callback) {
+        callback();
+    },
+
+    getServices: function() {
+        return this.services;
+    }
+};

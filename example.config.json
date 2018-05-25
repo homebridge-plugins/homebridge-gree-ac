@@ -1,0 +1,15 @@
+{
+    "bridge": {
+        "name": "Homebridge",
+        "username": "CC:22:3D:E3:CE:30",
+        "port": 51826,
+        "pin": "123-45-568"
+    },
+    "accessories": [
+        {
+            "accessory": "GreeAC",
+            "host": "192.168.1.255",
+            "name": "Home AC"
+        }
+    ]
+}
