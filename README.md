@@ -10,7 +10,7 @@ It needs mqtt server to get the ambient temperature. You can use an ESP8266 with
 For each AC you need to specify the IP address.
 
 ## Usage Example:
-
+```
 {
     "bridge": {
         "name": "Homebridge",
@@ -31,6 +31,5 @@ For each AC you need to specify the IP address.
         }
     ]
 }
-
-
+```
 
