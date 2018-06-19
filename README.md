@@ -1,4 +1,4 @@
-##Control Gree Air Conditioning from Homebridge.
+# Control Gree Air Conditioning with homekit
 
 This plugins is based on Gree HVAC MQTT bridge (https://github.com/arthurkrupa/gree-hvac-mqtt-bridge).
 
@@ -6,8 +6,9 @@ This plugins is based on Gree HVAC MQTT bridge (https://github.com/arthurkrupa/g
 - NodeJS (>=8.9.3) with NPM
 - An MQTT broker and Gree smart HVAC device on the same network
 
-It needs mqtt server to get the ambient temperature. You can use an ESP8266 with DHTXX sensor and post temperature value to a topic in an mqtt server.
-For each AC you need to specify the IP address.
+You nedd a mqtt server to read the ambient temperature. You can use an ESP8266 with DHTXX sensor and post temperature value to a topic in an mqtt server. Tah temperature should be the temperature on the room where the AC is installed.
+
+For each AC device you need to add an accesory and specify the IP address of the device (and mqtt topic to read the ambient temperature).
 
 ## Usage Example:
 ```
@@ -22,12 +23,18 @@ For each AC you need to specify the IP address.
         {
             "accessory": "GreeAC",
             "host": "192.168.1.X",
-            "name": "Office AC"
+            "name": "Office AC",
+            "updateInterval": 10000,
+            "mqttUrl": "mqtt://127.0.0.1",
+            "currentTempTopic": "home/office/temperature"
         },
         {
             "accessory": "GreeAC",
             "host": "192.168.1.Y",
-            "name": "Bedroom AC"
+            "name": "Bedroom AC",
+            "updateInterval": 10000,
+            "mqttUrl": "mqtt://127.0.0.1",
+            "currentTempTopic": "home/bedroom/temperature"
         }
     ]
 }
