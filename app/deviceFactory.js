@@ -59,11 +59,11 @@ class Device {
             socket.bind(() => {
                 const message = new Buffer(JSON.stringify({t: 'scan'}));
 
-                socket.setBroadcast(true);
+                socket.setBroadcast(false);
                 socket.send(message, 0, message.length, 7000, address);
             });
         } catch (err) {
-            const timeout = 60
+            const timeout = 5
             this.options.onDisconnected(this.device);
             setTimeout(() => {
                 this._connectToDevice(address);
@@ -86,7 +86,7 @@ class Device {
         this.device.bound = false;
         this.device.props = {};
 
-        // console.log('[GreeAC] New device registered: %s', this.device.name);
+        console.log('[GreeAC] New device registered: %s - %s', this.device.name, this.device.address);
     }
 
     /**

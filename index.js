@@ -71,7 +71,7 @@ function GreeAC(log, config) {
         .getCharacteristic(Characteristic.TargetTemperature)
             .setProps({
                 maxValue: 30,
-                minValue: 17,
+                minValue: 16,
                 minStep: 1
             })
             .on('set', this.setTargetTemperature.bind(this))
@@ -81,7 +81,7 @@ function GreeAC(log, config) {
         .getCharacteristic(Characteristic.CurrentTemperature)
             .setProps({
                 maxValue: 30,
-                minValue: 17,
+                minValue: 16,
                 minStep: 1
             })
             .on('get', this.getCurrentTemperature.bind(this));
@@ -217,14 +217,18 @@ GreeAC.prototype = {
     },
     
     getTemperatureDisplayUnits: function(callback) {
+        try {
         this.temperatureDisplayUnits = this.hvac.device.props[commands.temperatureUnit.code];
         if (this.debug === true) {
             this.log.info("getTemperatureDisplayUnits: ", this.temperatureDisplayUnits);
         }
         callback(null, this.temperatureDisplayUnits);
+       } catch (err) {callback();}
     },
 
     getTargetHeatingCoolingState: function(callback) {
+      try
+      {
         var state = Characteristic.TargetHeatingCoolingState.AUTO;
         var accessory = this;
         if (this.hvac.device.props[commands.power.code] === commands.power.value.off) {
@@ -239,9 +243,16 @@ GreeAC.prototype = {
 
         accessory.TargetHeatingCoolingState = state;
         callback(null, this.TargetHeatingCoolingState);
+      } catch (err) {
+         if (this.debug === true) {
+            this.log.info("getTemperatureDisplayUnits: error communicating with device");
+         }
+         callback();
+	}
     },
 
     setTargetHeatingCoolingState: function(TargetHeatingCoolingState, callback, context) {
+        try {
         if(context !== 'fromSetValue') {
             this.TargetHeatingCoolingState = TargetHeatingCoolingState;
             if (this.TargetHeatingCoolingState === Characteristic.TargetHeatingCoolingState.OFF) {
@@ -280,11 +291,14 @@ GreeAC.prototype = {
             }
         }
         callback();
+        } catch (err) {callback();}
     },
 
     getTargetTemperature: function(callback) {
+        try {
         this.TargetTemperature = parseInt(this.hvac.device.props[commands.temperature.code]);
         callback(null, this.TargetTemperature);
+        } catch (err) {callback();}
     },
 
     setTargetTemperature: function(TargetTemperature, callback, context) {

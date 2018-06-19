@@ -1,6 +1,6 @@
 {
   "name": "homebridge-gree-ac",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gree ac partner plugin for Homebridge.",
   "license": "MIT",
   "keywords": [
@@ -16,7 +16,8 @@
     "node": ">=0.12.0",
     "homebridge": ">=0.2.0"
   },
- "dependencies": {
-    "mqtt": "^1.12.0"
+  "dependencies": {
+    "mqtt": "^1.12.0",
+    "npm": "^6.1.0"
   }
 }
