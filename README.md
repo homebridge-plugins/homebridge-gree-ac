@@ -6,7 +6,7 @@ This plugins is based on Gree HVAC MQTT bridge (https://github.com/arthurkrupa/g
 - NodeJS (>=8.9.3) with NPM
 - An MQTT broker and Gree smart HVAC device on the same network
 
-You nedd a mqtt server to read the ambient temperature. You can use an ESP8266 with DHTXX sensor and post temperature value to a topic in an mqtt server. Tah temperature should be the temperature on the room where the AC is installed.
+You need a mqtt server to read the ambient temperature. You can use an ESP8266 with DHTXX sensor and post temperature value to a topic in an mqtt server. Tah temperature should be the temperature on the room where the AC is installed.
 
 For each AC device you need to add an accesory and specify the IP address of the device (and mqtt topic to read the ambient temperature).
 
