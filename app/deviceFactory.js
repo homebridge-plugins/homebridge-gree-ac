@@ -58,7 +58,6 @@ class Device {
         try {
             socket.bind(() => {
                 const message = new Buffer(JSON.stringify({t: 'scan'}));
-		print("GREEAC:ip=%s", address);
                 socket.setBroadcast(false);
                 socket.send(message, 0, message.length, 7000, address);
             });
