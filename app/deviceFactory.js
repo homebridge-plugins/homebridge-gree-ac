@@ -144,7 +144,7 @@ class Device {
     _handleResponse(msg, rinfo) {
 
         const message = JSON.parse(msg + '');
-
+        try {
         // Extract encrypted package from message using device key (if available)
         const pack = encryptionService.decrypt(message, (this.device || {}).key);
         
@@ -182,8 +182,10 @@ class Device {
             this.options.onUpdate(this.device);
             return;
         }
-        
         this.options.onError(this.device);
+        } catch (err) {
+//        this.options.onError(this.device);
+        }
     }
 
     /**
