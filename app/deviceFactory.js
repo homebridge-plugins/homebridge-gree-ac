@@ -58,7 +58,7 @@ class Device {
         try {
             socket.bind(() => {
                 const message = new Buffer(JSON.stringify({t: 'scan'}));
-
+		print("GREEAC:ip=%s", address);
                 socket.setBroadcast(false);
                 socket.send(message, 0, message.length, 7000, address);
             });
@@ -144,6 +144,10 @@ class Device {
     _handleResponse(msg, rinfo) {
 
         const message = JSON.parse(msg + '');
+        if (rinfo.address != this.options.host) {
+                //console.log("We received response from %s but we are looking for %s",rinfo.address, this.options.host );
+                return;
+        }
         try {
         // Extract encrypted package from message using device key (if available)
         const pack = encryptionService.decrypt(message, (this.device || {}).key);
