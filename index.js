@@ -12,13 +12,14 @@ module.exports = function(homebridge) {
 }
 
 function GreeAC(log, config) {
+
     this.log = log;
-    this.name = config.name || 'Gree AC';
-    this.host = config.host || '192.168.1.255';
+    this.name = config.name;
+    this.host = config.host;
     this.debug = ((config.debug || "false" ) === "true");
     this.updateInterval = config.updateInterval || 10000;
     this.currentTempTopic = config['currentTempTopic'] || "hvac/temperature";
-    this.mqttUrl = config['mqttUrl'] || "mqtt://127.0.0.1";
+    this.mqttUrl = config['mqttUrl'];
     this.client_Id      = 'mqttjs_' + Math.random().toString(16).substr(2, 8);
 
     this.mqttOptions = {
@@ -29,9 +30,9 @@ function GreeAC(log, config) {
         clean: true,
         reconnectPeriod: 1000,
         connectTimeout: 30 * 1000,
-    serialnumber: config["serial"] || this.client_Id,
-    max_temperature: config["maxTemperature"] || 100,
-    min_temperature: config["minTemperature"] || -50,
+        serialnumber: config["serial"] || this.client_Id,
+        max_temperature: config["maxTemperature"] || 100,
+        min_temperature: config["minTemperature"] || -50,
         username: config["username"],
         password: config["password"],
         will: {
@@ -43,8 +44,10 @@ function GreeAC(log, config) {
         rejectUnauthorized: false
     };
 
-    this.client  = mqtt.connect(this.mqttUrl, this.mqttOptions);
-
+    if (this.mqttUrl) {
+        this.client  = mqtt.connect(this.mqttUrl, this.mqttOptions);
+    }
+    
     this.TargetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.OFF;
     this.TargetTemperature = 22;
     this.CurrentTemperature = 0;
@@ -113,7 +116,7 @@ function GreeAC(log, config) {
     this.serviceInfo
         .setCharacteristic(Characteristic.Manufacturer, 'Gree')
         .setCharacteristic(Characteristic.Model, 'Bora A5')
-        .setCharacteristic(Characteristic.SerialNumber, 'GREEBORAA5');
+        .setCharacteristic(Characteristic.SerialNumber, this.host.replace(/./g, ""));
 
     this.services.push(this.serviceInfo);
 
@@ -159,19 +162,27 @@ GreeAC.prototype = {
                 .updateValue(accessory.TargetTemperature);
 
             if (accessory.debug === true) {
-                this.log.info('Get mode: %s', device_mode_status.toString());
-                this.log.info('Get temperature %s', device_temperature.toString());
-                this.log.info('Get fanspeed %s', deviceModel.props[commands.fanSpeed.code].toString());
-                this.log.info('Get swingvert %s', device_swingvert.toString());
-                this.log.info('Get powerstatus %s', device_power_status.toString());
+                log.info('Get mode: %s', device_mode_status.toString());
+                log.info('Get temperature %s', device_temperature.toString());
+                log.info('Get fanspeed %s', deviceModel.props[commands.fanSpeed.code].toString());
+                log.info('Get swingvert %s', device_swingvert.toString());
+                log.info('Get powerstatus %s', device_power_status.toString());
             }
           },
           onUpdate: (deviceModel) => {
-            this.log.info('Status updated on %s', deviceModel.name)
+            if (accessory.debug === true) {
+                this.log.info('Status updated on %s', deviceModel.name)
+            }
           },
           onConnected: (deviceModel) => {
             var accesorry = this;
-            accesorry.log.info('Connecting on %s with ip address %s[%d] debug=%s: %s', deviceModel.name, deviceModel.address, deviceModel.port, accesorry.debug, deviceModel.bound ? "SUCCESS": "FAIL");
+
+            if (deviceModel.bound == true) {
+                accesorry.log.info('Connected to %s with IP address %s', deviceModel.name, deviceModel.address);
+            } else {
+                accesorry.log.info('Error connecting to %s with IP address %s', deviceModel.name, deviceModel.address);
+            }
+
             accesorry.client.subscribe(this.currentTempTopic);
             accesorry.client.on('message', function (topic, message) {
                 try {
@@ -185,7 +196,7 @@ GreeAC.prototype = {
                 that.temperature = parseFloat(data);
                 if (!isNaN(that.temperature)) {
                     if (accesorry.debug === true) {
-                        accesorry.log.info('Current temperature is ' + that.temperature);
+                        accesorry.log.info('Current room temperature is ' + that.temperature);
                     }
                     accesorry.CurrentTemperature = parseFloat(that.temperature);
                     accesorry.GreeACService
@@ -196,15 +207,16 @@ GreeAC.prototype = {
           },
           onError: (deviceModel) => {
             if (this.debug === true) {
-                this.log.info('Connecting on %s with ip address %s[%d]: %s', deviceModel.name, deviceModel.address, deviceModel.port, deviceModel.bound ? "SUCCESS": "FAIL");
+                this.log.info('Error communicating with device %s with IP address %s', deviceModel.name, deviceModel.address);
             }
           },
           onDisconnected: (deviceModel) => {
             if (this.debug === true ) {
-                this.log.info('Connecting on %s with ip address %s[%d]: %s', deviceModel.name, deviceModel.address, deviceModel.port, deviceModel.bound ? "SUCCESS": "FAIL");
+                this.log.info('Disconnected from device %s with IP address %s', deviceModel.name, deviceModel.address);
             }
           }
         };
+        log.info("Start discover device %s", deviceOptions.host);
         accessory.hvac = require('./app/deviceFactory').connect(deviceOptions);
     },
 
@@ -329,6 +341,7 @@ GreeAC.prototype = {
     },
 
     identify: function(callback) {
+        this.hvac.setTemp(22);
         callback();
     },
 

@@ -22,7 +22,7 @@ class Device {
 
         //  Set defaults
         this.options = {
-            host: options.host || '192.168.1.255',
+            host: options.host,
             onStatus: options.onStatus || function() {},
             onUpdate: options.onUpdate || function() {},
             onConnected: options.onConnected || function() {},
@@ -45,7 +45,7 @@ class Device {
 
         // Initialize connection and bind with device
         this._connectToDevice(this.options.host);
-        
+
         // Handle incoming messages
         socket.on('message', (msg, rinfo) => this._handleResponse(msg, rinfo));
     }
@@ -59,6 +59,7 @@ class Device {
             socket.bind(() => {
                 const message = new Buffer(JSON.stringify({t: 'scan'}));
                 socket.setBroadcast(false);
+                console.log("[GreeAC]: connecting to %s", this.options.host);
                 socket.send(message, 0, message.length, 7000, address);
             });
         } catch (err) {
@@ -84,8 +85,7 @@ class Device {
         this.device.port = port;
         this.device.bound = false;
         this.device.props = {};
-
-        console.log('[GreeAC] New device registered: %s - %s', this.device.name, this.device.address);
+        console.log('[GreeAC] New device added: %s - %s', this.device.name, this.device.address);
     }
 
     /**
@@ -118,6 +118,7 @@ class Device {
     _confirmBinding(id, key) {
         this.device.bound = true;
         this.device.key = key;
+        console.log('[GreeAC] device is bound: %s - %s', this.device.name, this.device.key);
     }
 
     /**
@@ -141,16 +142,14 @@ class Device {
      * @param {number} rinfo.port Port number
      */
     _handleResponse(msg, rinfo) {
-
-        const message = JSON.parse(msg + '');
         if (rinfo.address != this.options.host) {
-                //console.log("We received response from %s but we are looking for %s",rinfo.address, this.options.host );
-                return;
-        }
-        try {
+        //console.log("We received response from %s but we are looking for %s",rinfo.address, this.options.host );
+        return;
+    }
+        const message = JSON.parse(msg + '');
+        try{
         // Extract encrypted package from message using device key (if available)
         const pack = encryptionService.decrypt(message, (this.device || {}).key);
-        
         // If package type is response to handshake
         if (pack.t === 'dev') {
             this._setDevice(message.cid, pack.name, rinfo.address, rinfo.port);
@@ -187,7 +186,7 @@ class Device {
         }
         this.options.onError(this.device);
         } catch (err) {
-//        this.options.onError(this.device);
+        this.options.onError(this.device);
         }
     }
 
@@ -288,4 +287,3 @@ class Device {
 module.exports.connect = function(options) {
     return new Device(options);
 };
-
