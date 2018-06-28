@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = {
     // power state of the device
     power: {
