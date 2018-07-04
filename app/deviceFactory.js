@@ -225,9 +225,9 @@ class Device {
      * @param {string} [address] IP/host address
      * @param {number} [port] Port number
      */
-    _sendRequest (message, address = that.device.address, port = that.device.port) {
+    _sendRequest (message, address = this.device.address, port = this.device.port) {
         var that = this;
-        const encryptedMessage = encryptionService.encrypt(message, that.device.key);
+        const encryptedMessage = encryptionService.encrypt(message, this.device.key);
         const request = {
             cid: 'app',
             i: 0,
