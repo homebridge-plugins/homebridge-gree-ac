@@ -57,6 +57,7 @@ class Device {
     /**
      * Initialize connection
      * @param {string} address - IP/host address
+     * @param {int} port - local bind port
      */
     _connectToDevice(address, port) {
         var that = this;
