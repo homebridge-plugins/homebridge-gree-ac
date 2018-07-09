@@ -16,7 +16,7 @@ class Device {
      * @callback [options.onStatus] Callback function run on each status update
      * @callback [options.onUpdate] Callback function run after command
      * @callback [options.onConnected] Callback function run once connection is established
-     */
+      */
     constructor(options) {
         this.socket = dgram.createSocket({type: 'udp4', reuseAddr: true});
         //  Set defaults
@@ -56,8 +56,7 @@ class Device {
 
     /**
      * Initialize connection
-     * @param {string} address - IP/host address
-     * @param {int} port - local bind port
+     * @param {string} address - IP/host address 
      */
     _connectToDevice(address, port) {
         var that = this;
@@ -155,50 +154,50 @@ class Device {
     _handleResponse(msg, rinfo) {
         var that = this;
         if (rinfo.address != that.options.host) {
-            //console.log("We received response from %s but we are looking for %s",rinfo.address, that.options.host );
-            return;
-        }
+        //console.log("We received response from %s but we are looking for %s",rinfo.address, that.options.host );
+        return;
+    }
         const message = JSON.parse(msg + '');
         try{
-            // Extract encrypted package from message using device key (if available)
-            const pack = encryptionService.decrypt(message, (that.device || {}).key);
-            // If package type is response to handshake
-            if (pack.t === 'dev') {
-                that._setDevice(message.cid, pack.name, rinfo.address, rinfo.port);
-                that._sendBindRequest(that.device);
-                return;
-            }
+        // Extract encrypted package from message using device key (if available)
+        const pack = encryptionService.decrypt(message, (that.device || {}).key);
+        // If package type is response to handshake
+        if (pack.t === 'dev') {
+            that._setDevice(message.cid, pack.name, rinfo.address, rinfo.port);
+            that._sendBindRequest(that.device);
+            return;
+        }
 
-            // If package type is binding confirmation
-            if (pack.t === 'bindok' && that.device.id) {
-                that._confirmBinding(message.cid, pack.key);
+        // If package type is binding confirmation
+        if (pack.t === 'bindok' && that.device.id) {
+            that._confirmBinding(message.cid, pack.key);
 
-                // Start requesting device status on set interval
-                setInterval(that._requestDeviceStatus.bind(this, that.device), that.options.updateInterval);
-                that.options.onConnected(that.device)
-                return;
-            }
+            // Start requesting device status on set interval
+            setInterval(that._requestDeviceStatus.bind(this, that.device), that.options.updateInterval);
+            that.options.onConnected(that.device)
+            return;
+        }
 
-            // If package type is device status
-            if (pack.t === 'dat' && that.device.bound) {
-                pack.cols.forEach((col, i) => {
-                    that.device.props[col] = pack.dat[i];
-                });
-                that.options.onStatus(that.device);
-                return;
-            }
+        // If package type is device status
+        if (pack.t === 'dat' && that.device.bound) {
+            pack.cols.forEach((col, i) => {
+                that.device.props[col] = pack.dat[i];
+            });
+            that.options.onStatus(that.device);
+            return;
+        }
 
-            // If package type is response, update device properties
-            if (pack.t === 'res' && that.device.bound) {
-                pack.opt.forEach((opt, i) => {
-                    that.device.props[opt] = pack.val[i];
-                });
-                that.options.onUpdate(that.device);
-                return;
-            }
-            that.options.onError(that.device);
+        // If package type is response, update device properties
+        if (pack.t === 'res' && that.device.bound) {
+            pack.opt.forEach((opt, i) => {
+                that.device.props[opt] = pack.val[i];
+            });
+            that.options.onUpdate(that.device);
+            return;
+        }
+        that.options.onError(that.device);
         } catch (err) {
-            that.options.onError(that.device);
+        that.options.onError(that.device);
         }
     }
 
@@ -226,20 +225,20 @@ class Device {
      * @param {string} [address] IP/host address
      * @param {number} [port] Port number
      */
-    _sendRequest (message, address = that.device.address, port = that.device.port) {
+    _sendRequest (message, address = this.device.address, port = this.device.port) {
         var that = this;
-        const encryptedMessage = encryptionService.encrypt(message, that.device.key);
+        const encryptedMessage = encryptionService.encrypt(message, this.device.key);
         const request = {
-            cid: 'app',
-            i: 0,
-            t: 'pack',
-            uid: 0,
-            pack: encryptedMessage
+          cid: 'app',
+          i: 0,
+          t: 'pack',
+          uid: 0,
+          pack: encryptedMessage
         };
         const serializedRequest = new Buffer(JSON.stringify(request));
         this.socket.send(serializedRequest, 0, serializedRequest.length, port, address);
     };
-
+    
     /**
      * Turn on/off
      * @param {boolean} value State
@@ -251,7 +250,7 @@ class Device {
             [value ? 1 : 0]
         );
     };
-
+    
     /**
      * Set temperature
      * @param {number} value Temperature
@@ -264,7 +263,7 @@ class Device {
             [unit, value]
         );
     };
-
+    
     /**
      * Set mode
      * @param {number} value Mode value (0-4)
@@ -276,7 +275,7 @@ class Device {
             [value]
         );
     };
-
+    
     /**
      * Set fan speed
      * @param {number} value Fan speed value (0-5)
@@ -288,7 +287,7 @@ class Device {
             [value]
         );
     };
-
+    
     /**
      * Set vertical swing
      * @param {number} value Vertical swing value (0-11)
@@ -300,7 +299,7 @@ class Device {
             [value]
         );
     };
-
+    
 };
 
 module.exports.connect = function(options) {

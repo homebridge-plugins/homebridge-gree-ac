@@ -328,7 +328,7 @@ GreeAC.prototype = {
         var log = this.log;
         if (context !== 'fromSetValue') {
             accessory.TargetTemperature = TargetTemperature;
-            // if ac is off, then turn it on by setting to auto mode
+            // if ac is off, then turn it on by setting to auto mode 
             if (accessory.TargetHeatingCoolingState == Characteristic.TargetHeatingCoolingState.OFF) {
                 accessory.hvac.setPower(commands.power.value.on);
             }
@@ -369,3 +369,5 @@ GreeAC.prototype = {
     }
 
 };
+
+
